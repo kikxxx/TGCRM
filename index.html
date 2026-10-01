@@ -1,1 +1,133 @@
-<h1>TGCRM работает</h1>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>TGCRM</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: var(--tg-theme-bg-color, #ffffff);
+      --text: var(--tg-theme-text-color, #1c1c1e);
+      --hint: var(--tg-theme-hint-color, #8e8e93);
+      --card: var(--tg-theme-secondary-bg-color, #f2f2f7);
+      --accent: var(--tg-theme-button-color, #1f7a6d);
+      --accent-text: var(--tg-theme-button-text-color, #ffffff);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding-bottom: 80px;
+      font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header { padding: 16px 16px 8px; }
+    h1 { margin: 0 0 12px; font-size: 26px; }
+    #search {
+      width: 100%;
+      padding: 12px 14px;
+      border: none;
+      border-radius: 12px;
+      background: var(--card);
+      color: var(--text);
+      font-size: 16px;
+    }
+    .client { margin: 8px 16px; padding: 14px; border-radius: 14px; background: var(--card); }
+    .client-top { display: flex; justify-content: space-between; align-items: center; }
+    .name { font-weight: 600; font-size: 17px; }
+    .request { margin-top: 4px; color: var(--hint); font-size: 14px; }
+    .status { padding: 3px 10px; border-radius: 20px; font-size: 12px; background: var(--accent); color: var(--accent-text); }
+    .details { display: none; margin-top: 12px; font-size: 14px; }
+    .client.open .details { display: block; }
+    .call { display: inline-block; margin-top: 8px; padding: 8px 14px; border-radius: 10px; background: var(--accent); color: var(--accent-text); text-decoration: none; }
+    #add {
+      position: fixed; right: 16px; bottom: 84px;
+      width: 56px; height: 56px; border: none; border-radius: 50%;
+      background: var(--accent); color: var(--accent-text); font-size: 30px;
+    }
+    nav {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      display: flex; background: var(--card);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    nav button { flex: 1; padding: 14px 0; border: none; background: none; color: var(--hint); font-size: 14px; }
+    nav button.active { color: var(--accent); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Клиенты</h1>
+    <input id="search" type="search" placeholder="Поиск по имени или запросу">
+  </header>
+
+  <main id="list"></main>
+
+  <button id="add" aria-label="Добавить клиента">+</button>
+
+  <nav>
+    <button class="active">Клиенты</button>
+    <button>Объекты</button>
+    <button>Задачи</button>
+  </nav>
+
+  <script>
+    // Подключаем Telegram: сообщаем, что страница готова, и раскрываем на весь экран
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+
+    // Демо-данные: пока вместо базы данных
+    const clients = [
+      { name: "Анна Миронова", request: "Купить 2-к квартиру до 8 млн, Центр", status: "Новый", phone: "+79990000001" },
+      { name: "Игорь Селезнёв", request: "Снять студию до 35 тыс., рядом с метро", status: "Показ", phone: "+79990000002" },
+      { name: "Мария Крылова", request: "Продать 3-к квартиру, 78 м²", status: "Задаток", phone: "+79990000003" },
+      { name: "Олег Рябов", request: "Купить дом с участком, до 12 млн", status: "Новый", phone: "+79990000004" }
+    ];
+
+    const list = document.getElementById("list");
+    const search = document.getElementById("search");
+
+    // Рисуем список клиентов (фильтруем по тексту из поиска)
+    function render() {
+      const q = search.value.toLowerCase();
+      list.innerHTML = "";
+      clients
+        .filter(c => (c.name + " " + c.request).toLowerCase().includes(q))
+        .forEach(c => {
+          const card = document.createElement("div");
+          card.className = "client";
+          card.innerHTML = `
+            <div class="client-top">
+              <span class="name">${c.name}</span>
+              <span class="status">${c.status}</span>
+            </div>
+            <div class="request">${c.request}</div>
+            <div class="details">
+              Телефон: ${c.phone}<br>
+              <a class="call" href="tel:${c.phone}">Позвонить</a>
+            </div>`;
+          // Нажатие на карточку раскрывает или скрывает детали
+          card.addEventListener("click", () => card.classList.toggle("open"));
+          list.appendChild(card);
+        });
+      if (!list.children.length) {
+        list.innerHTML = '<p style="text-align:center;color:var(--hint)">Никого не нашли. Нажмите «+», чтобы добавить клиента.</p>';
+      }
+    }
+
+    search.addEventListener("input", render);
+
+    // Кнопка «+»: простое добавление через окошки
+    document.getElementById("add").addEventListener("click", () => {
+      const name = prompt("Имя клиента");
+      if (!name) return;
+      const request = prompt("Что ищет клиент?") || "Запрос не указан";
+      clients.unshift({ name, request, status: "Новый", phone: "" });
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
